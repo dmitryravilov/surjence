@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+
+jobs:
+  backend:
+    name: Laravel Backend
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: surjence
+          POSTGRES_USER: surjence
+          POSTGRES_PASSWORD: surjence
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Laravel backend image (dev)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: false
+          load: true
+          tags: surjence-laravel:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Prepare environment
+        run: cp backend/.env.example backend/.env
+
+      - name: Run Pint
+        run: docker run --rm surjence-laravel:test composer pint --test
+
+      - name: Run Laravel tests
+        run: docker run --rm --network host surjence-laravel:test php artisan test
+
+  go:
+    name: Go Service (Lint & Vet)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Go service image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./go-service
+          push: false
+          tags: surjence-go-service:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run go vet inside container
+        run: docker run --rm -v ${{ github.workspace }}/go-service:/app -w /app golang:1.22-alpine go vet ./...
+
+      - name: Run golangci-lint inside container
+        run: docker run --rm -v ${{ github.workspace }}/go-service:/app -w /app golangci/golangci-lint:v1.61 golangci-lint run --timeout=5m
+
+  frontend:
+    name: Frontend (Build Check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build frontend image (multi-stage)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: false
+          load: true
+          target: build
+          tags: surjence-frontend:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run build inside container
+        run: docker run --rm surjence-frontend:test npm run build
+
+  docker:
+    name: Compose Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate docker-compose.yml
+        run: docker-compose -f docker-compose.yml config

@@ -1,0 +1,167 @@
+openapi: 3.0.3
+info:
+  title: Surjence API
+  description: |
+    Surjence — Mindful News, Brewed Slowly
+
+    A reader-first news application designed to reduce information overload
+    and encourage intentional consumption.
+  version: 1.0.0
+  contact:
+    name: Surjence API Support
+
+servers:
+  - url: http://localhost:8000/api
+    description: Local development server
+
+paths:
+  /v1/headlines:
+    get:
+      summary: Get daily headlines
+      description: |
+        Returns a curated list of headlines for the day.
+      operationId: getHeadlines
+      tags:
+        - Headlines
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Headline'
+                  count:
+                    type: integer
+                    description: Number of headlines returned
+                  meta:
+                    type: object
+                    properties:
+                      fetched_at:
+                        type: string
+                        format: date-time
+                        description: When the headlines were fetched
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /v1/themes:
+    get:
+      summary: Get available themes
+      description: Returns all available news themes/categories
+      operationId: getThemes
+      tags:
+        - Themes
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Theme'
+                  count:
+                    type: integer
+                    description: Number of themes
+
+components:
+  schemas:
+    Headline:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique headline identifier
+        title:
+          type: string
+          description: Headline title
+        source:
+          type: string
+          description: News source name
+        url:
+          type: string
+          format: uri
+          description: Link to full article
+        description:
+          type: string
+          nullable: true
+          description: Article description
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Publication date
+        sentiment:
+          type: string
+          enum: [positive, negative, neutral]
+          description: Sentiment classification
+        keywords:
+          type: array
+          items:
+            type: string
+          description: Extracted keywords
+        theme:
+          $ref: '#/components/schemas/Theme'
+          nullable: true
+        reflection:
+          type: string
+          nullable: true
+          description: Mindful reflection on the headline
+      required:
+        - id
+        - title
+        - source
+        - url
+        - sentiment
+        - keywords
+
+    Theme:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique theme identifier
+        name:
+          type: string
+          description: Theme name
+        description:
+          type: string
+          nullable: true
+          description: Theme description
+        color:
+          type: string
+          description: Theme color (hex code)
+        headlines_count:
+          type: integer
+          description: Number of headlines in this theme
+      required:
+        - id
+        - name
+        - color
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+      required:
+        - error
+
+tags:
+  - name: Headlines
+    description: Headline operations
+  - name: Themes
+    description: Theme operations
+
