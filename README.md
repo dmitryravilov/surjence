@@ -1,6 +1,6 @@
-# Surjence — Mindful News, Brewed Slowly
+# Surjence. Mindful News, Brewed Slowly
 
-Surjence blends *surj* (Armenian for coffee) with *presence* — a quiet ritual of reading the world with care.
+Surjence blends 'surj' (Armenian for coffee) with 'presence', a quiet ritual of reading the world with care.
 
 Surjence is a newsreader that slows things down.
 Instead of endless feeds, it offers just a few headlines each day, presented with space and warmth. 
